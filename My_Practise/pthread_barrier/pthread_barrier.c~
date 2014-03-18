@@ -1,0 +1,45 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#define num_threads 3
+#define iterations 10
+
+struct pthread_args
+{
+  int thread_num;
+  pthread_barrier_t *barrier;
+};
+
+void *iterate(void *ptr)
+{
+  struct pthread_args *attr = ptr;
+  int thread_num = attr->thread_num;
+  for(int i=0;i<iterations;i++)
+  {
+    printf("Thread id = %d and Iteration = %d\n",thread_num,i);
+  }
+  return NULL;
+}
+
+
+int main(int argc,char **argv)
+{
+ pthread_t *thread;
+ struct pthread_args *thread_args;
+ thread = malloc(num_threads * sizeof(*thread));
+ thread_args = malloc(num_threads * sizeof(*thread_args));
+ pthread_barrier_t barrier;
+ pthread_barrier_init(&barrier,NULL,num_threads);
+ for(int i=0;i<num_threads;i++)
+ {
+   thread_args[i].thread_num = i;
+   thread_args[i].barrier = &barrier;
+   pthread_create(thread+i,NULL,&iterate,thread_args+i);
+ }
+ for(int i=0;i<num_threads;i++)
+ {
+  pthread_join(thread[i],NULL);
+ }
+ pthread_barrier_destroy(&barrier);
+ return 0;
+}

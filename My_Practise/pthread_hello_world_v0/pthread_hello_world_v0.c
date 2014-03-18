@@ -1,0 +1,17 @@
+#include<stdio.h>
+#include<pthread.h>
+
+void *hello()
+{
+   printf("Hello World from pthread!\n");
+   return NULL;
+}
+int main(int argc, char** argv)
+{
+   pthread_t thread;
+   pthread_create(&thread, NULL, &hello, NULL);
+   printf("Hello World from MAIN !!\n");
+   pthread_join(thread,NULL);
+   return 0;
+}
+

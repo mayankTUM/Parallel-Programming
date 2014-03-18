@@ -1,0 +1,46 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#define number_of_iterations 1000000
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER
+//pthread_spinlock_t spinlock;
+
+void *increment(void *ptr)
+{
+  int *i = ptr;
+  for(int j=0;j<number_of_iterations;j++)
+  {
+   pthread_mutex_lock(&mutex);
+   *i=*i+1;
+   pthread_mutex_unlock(&mutex); 
+  }
+  return NULL;
+}
+
+/*
+This example shows the effect of data dependency. If I move the pthread_join above the for loop, the main function waits for the thread to
+finish its task before moving forward. In this case we always get 2000000 as the output. But otherwise it is some less value. Other options to prevent data dependency is to either use mutexes or spinlocks as described below.
+*/
+
+int main(int argc, char **argv)
+{
+ int i = 0;
+ pthread_t thread;
+ //pthread_spin_init(&spinlock, PTHREAD_PROCESS_PRIVATE);
+ 
+ //another way to declare mutexes
+ //pthread_mutex_init(&mutex, PTHREAD_MUTEX_INITIALIZER);
+ pthread_create(&thread,NULL,&increment,&i);
+ for(int j=0;j<number_of_iterations;j++)
+ {
+    pthread_mutex_lock(&mutex);
+    //pthread_spin_lock(&spinlock);
+    i=i+1;
+    //pthread_spin_unlock(&spinlock);
+    pthread_mutex_unlock(&mutex);
+ }
+ pthread_join(thread,NULL);
+ printf("Value of 'i' is %d\n",i);
+ return 0;
+}

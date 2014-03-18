@@ -1,0 +1,57 @@
+#include<stdio.h>
+
+//header file for pthreads
+#include<pthread.h>
+
+//header file for malloc
+#include<stdlib.h>
+
+//header files for getpid
+#include <sys/types.h>
+#include <unistd.h>
+
+//header file for syscall
+#include <sys/syscall.h>
+
+
+// one way to get the thread id is to use the pthread_self library function. But the pthread_library functions are local to pthread program
+// only not across the entire system. Two ways to get Linux thread id : SYS_gettid, __NR_gettid
+pid_t gettid()
+{
+ //return (pid_t) syscall(SYS_gettid);	
+ return (pid_t) syscall(__NR_gettid); 
+}
+
+
+struct pthread_args
+{
+   long thread_id;
+   long thread_number;
+};
+
+void *hello(void *ptr)
+{
+        struct pthread_args *args = ptr; 
+	printf("Hello world from pthread %ld of %ld, PID = %d, TID = %d\n",args->thread_id, args->thread_number, getpid(), gettid());
+	return NULL;
+}
+
+int main(int argc, char **argv)
+{
+	long num_threads = 4;
+	pthread_t *thread;
+        struct pthread_args *thread_args;
+	thread = malloc(num_threads * sizeof(*thread));
+        thread_args = malloc(num_threads * sizeof(*thread_args));
+        for(long i=0; i<num_threads; i++)
+        {
+		thread_args[i].thread_id = i;
+                thread_args[i].thread_number = num_threads;
+		pthread_create(thread+i,NULL,&hello,thread_args+i);
+        }
+        for(long i=0; i<num_threads; i++)
+        {
+		pthread_join(thread[i],NULL);
+        }
+	return 0;
+}

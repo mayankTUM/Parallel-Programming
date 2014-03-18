@@ -1,0 +1,65 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <pthread.h>
+
+#define number_of_threads 2
+#define STEPS 1000000
+#define step_size 1.0/STEPS
+#define chunk_size 10
+
+struct pthread_args
+{
+  long iterations;
+  pthread_mutex_t mutex;
+};
+
+void *calculate_pi(void *ptr)
+{
+  struct pthread_args *attr = ptr;
+  double lsum = 0.0;
+  for(;;)
+  {
+   pthread_mutex_lock(&(attr->mutex));
+   long i = attr->iterations;
+   attr->iterations = attr->iterations + chunk_size;
+   pthread_mutex_unlock(&(attr->mutex));
+   if((i + chunk_size) > STEPS)
+   {
+     break;
+   }
+   
+   double lower = (0.5 + i)*step_size;
+   double upper = (i + chunk_size)*step_size;
+   while(lower<upper)
+   {
+      lsum = lsum + sqrt(1-lower*lower) * step_size;
+      lower += step_size;
+   }
+  }
+  double *temp = malloc(sizeof(double));
+  *temp = lsum; 
+  return temp;
+}   
+
+int main(int argc, char **argv)
+{
+  void *lsum;
+  double sum = 0.0;
+  pthread_t *thread;
+  struct pthread_args args = {0, PTHREAD_MUTEX_INITIALIZER};
+  thread = malloc(number_of_threads * sizeof(*thread));
+  for(int i=0;i<number_of_threads;i++)
+  {
+    pthread_create(thread+i,NULL,&calculate_pi,&args);
+  }
+  for(int i=0;i<number_of_threads;i++)
+  {
+    pthread_join(thread[i],&lsum);
+    sum+= *((double*)lsum);
+  }
+  sum*=4;
+  printf("Calculated PI is %.10lf\n",sum);
+  printf("Error in PI is %.10lf\n",M_PI-sum);
+  return 0;
+}
